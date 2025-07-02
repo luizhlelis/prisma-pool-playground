@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["metrics"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Hero {
+  id                   String   @id @default(uuid())
+  name                 String
+  level                Int      @default(1)
+  experience           Int      @default(0)
+  enemiesKilledAmount  Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  // Relationships
+  enemiesKilled        Enemy[]  @relation("HeroKilledEnemies")
+}
+
+enum EnemyType {
+  DRAGON
+  ORC
+  GOBLIN
+  TROLL
+}
+
+model Enemy {
+  id               String    @id @default(uuid())
+  name             String
+  level            Int       @default(1)
+  experience       Int       @default(0)
+  enemyType        EnemyType
+  killedByHeroId   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relationships
+  killedByHero     Hero?     @relation("HeroKilledEnemies", fields: [killedByHeroId], references: [id])
+}
