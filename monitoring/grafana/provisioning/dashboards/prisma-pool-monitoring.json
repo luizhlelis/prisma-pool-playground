@@ -1,0 +1,104 @@
+{
+  "id": null,
+  "title": "Prisma Connection Pool Monitoring",
+  "tags": ["prisma", "database", "monitoring"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "System Status",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}} - {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 1}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "OTEL Collector Metrics",
+      "type": "timeseries", 
+      "targets": [
+        {
+          "expr": "rate(otelcol_receiver_accepted_spans_total[5m])",
+          "legendFormat": "Spans/sec - {{receiver}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(otelcol_exporter_sent_spans_total[5m])",
+          "legendFormat": "Exported Spans/sec - {{exporter}}",
+          "refId": "B"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Application Container Status",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Time": true, "__name__": true},
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Status",
+              "job": "Service",
+              "instance": "Instance"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Instructions",
+      "type": "text",
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 16},
+      "options": {
+        "content": "## Prisma Pool Monitoring Dashboard\n\n### Current Status\n- **OTEL Collector**: Collecting telemetry data from applications\n- **Data Flow**: Apps → OTEL Collector → Tempo (traces) + Loki (logs)\n- **Metrics**: Available through Prometheus scraping\n\n### To Generate Data:\n1. Run load tests: `docker run --rm --network prisma-pool-playground_pool_test_network -v \"$(pwd)/scripts:/scripts\" grafana/k6:latest run /scripts/quick-load-test.js --env TARGET_URL=http://app-scenario-a:3000`\n2. Make API calls to scenarios: `curl http://localhost:3001/heroes`\n3. Check traces in **Explore → Tempo**\n4. Check logs in **Explore → Loki**\n\n### Available Data Sources:\n- **Prometheus**: System and OTEL metrics\n- **Tempo**: Distributed traces from applications  \n- **Loki**: Application logs with structured data",
+        "mode": "markdown"
+      }
+    }
+  ],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "version": 1,
+  "gnetId": null
+}

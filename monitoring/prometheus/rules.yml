@@ -1,0 +1,49 @@
+groups:
+  - name: database_alerts
+    rules:
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of database connections"
+          description: "Database has {{ $value }} connections, which is above the threshold"
+
+      - alert: PoolExhaustion
+        expr: increase(prisma_pool_connections_opened_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Connection pool exhaustion detected"
+          description: "Scenario {{ $labels.scenario }} is creating connections rapidly"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for scenario {{ $labels.scenario }}"
+
+  - name: pgbouncer_alerts
+    rules:
+      - alert: PgBouncerQueueBuildup
+        expr: pgbouncer_pools_cl_waiting > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PgBouncer queue building up"
+          description: "PgBouncer has {{ $value }} clients waiting in queue"
+
+      - alert: PgBouncerPoolExhaustion
+        expr: pgbouncer_pools_sv_active / pgbouncer_pools_sv_total > 0.9
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "PgBouncer pool near exhaustion"
+          description: "PgBouncer pool utilization is {{ $value | humanizePercentage }}"

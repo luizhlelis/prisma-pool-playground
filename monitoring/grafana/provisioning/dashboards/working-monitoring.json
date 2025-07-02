@@ -1,0 +1,131 @@
+{
+  "id": null,
+  "title": "Working Prisma Pool Monitoring",
+  "tags": ["prisma", "database", "monitoring", "working"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Health Status",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 1}
+            ]
+          },
+          "mappings": [
+            {"options": {"0": {"text": "DOWN"}}, "type": "value"},
+            {"options": {"1": {"text": "UP"}}, "type": "value"}
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Prometheus Scrape Duration",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "scrape_duration_seconds",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Available Metrics Count",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "prometheus_tsdb_symbol_table_size_bytes",
+          "legendFormat": "Symbol Table Size",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 8, "x": 0, "y": 6},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Active Time Series",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "prometheus_tsdb_head_series",
+          "legendFormat": "Active Series",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 8, "x": 8, "y": 6},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Samples Ingested",
+      "type": "stat", 
+      "targets": [
+        {
+          "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])",
+          "legendFormat": "Samples/sec",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 8, "x": 16, "y": 6},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "How to View Telemetry Data",
+      "type": "text",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 10},
+      "options": {
+        "content": "# 🔍 Viewing Telemetry Data in Grafana\n\n## 📊 What's Working Now\n- ✅ **Prometheus**: Collecting basic system metrics\n- ✅ **Tempo**: Ready for distributed traces\n- ✅ **Loki**: Ready for application logs\n- ✅ **OTEL Collector**: Configured and running\n\n## 🎯 How to Explore Data\n\n### 1. View Traces (Distributed Tracing)\n1. Go to **Explore** (compass icon in left sidebar)\n2. Select **Tempo** as data source\n3. Use Service Graph or Search\n4. Or try query: `{service.name=\"heroes-vs-enemies\"}`\n\n### 2. View Logs (Application Logs)\n1. Go to **Explore**\n2. Select **Loki** as data source  \n3. Try queries:\n   - `{service_name=\"heroes-vs-enemies\"}` - All app logs\n   - `{service_name=\"heroes-vs-enemies\"} |= \"ERROR\"` - Error logs only\n   - `{container_name=~\".*scenario-a.*\"}` - Scenario A logs\n\n### 3. View Metrics (System Performance)\n1. Go to **Explore**\n2. Select **Prometheus** as data source\n3. Try queries:\n   - `up` - Service health status\n   - `scrape_duration_seconds` - Scraping performance\n   - `prometheus_tsdb_head_series` - Active time series\n\n## 🚀 Generate Data for Testing\n\n### Generate HTTP Requests:\n```bash\n# From your terminal:\ncurl http://localhost:3001/heroes\ncurl http://localhost:3001/enemies\ncurl http://localhost:3001/\n```\n\n### Run Load Test:\n```bash\ndocker run --rm --network prisma-pool-playground_pool_test_network \\\n  -v \"$(pwd)/scripts:/scripts\" grafana/k6:latest \\\n  run /scripts/quick-load-test.js \\\n  --env TARGET_URL=http://app-scenario-a:3000\n```\n\n## 📈 Expected Results\n- **Traces**: HTTP requests, database queries, business logic spans\n- **Logs**: Structured application logs with correlation IDs\n- **Metrics**: Request rates, response times, error rates\n\n## 🔧 Troubleshooting\n1. **No traces?** - Check Tempo in Explore → Select time range → Search\n2. **No logs?** - Applications may not be sending logs to OTEL yet\n3. **No custom metrics?** - Apps send traces/logs but not custom metrics by default",
+        "mode": "markdown"
+      }
+    }
+  ],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "version": 2,
+  "gnetId": null
+}

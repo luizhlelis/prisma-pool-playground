@@ -1,0 +1,84 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  filelog:
+    include:
+      - /var/lib/docker/containers/*/*.log
+    start_at: end
+    include_file_path: true
+    include_file_name: false
+    operators:
+      # Parse JSON logs from Docker
+      - id: json_parser
+        type: json_parser
+        timestamp:
+          parse_from: attributes.time
+          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+      # Extract container id from path
+      - type: regex_parser
+        id: container_id_parser
+        regex: '^/var/lib/docker/containers/(?P<container_id>[^/]+)/.*\.log$'
+        parse_from: attributes["log.file.path"]
+      # Move log field to body
+      - type: move
+        from: attributes.log
+        to: body
+      # Clean up stream attribute
+      - type: remove
+        field: attributes.stream
+  postgresql:
+    endpoint: postgres:5432
+    transport: tcp
+    username: prisma_user
+    password: prisma_password
+    databases:
+      - heroes_vs_enemies
+    collection_interval: 10s
+    tls:
+      insecure: true
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 10s
+
+processors:
+  batch:
+  resource:
+    attributes:
+      - key: service.name
+        value: heroes-vs-enemies
+        action: insert
+      - key: loki.resource.labels
+        value: service.name, container.id
+        action: insert
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  otlp:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+service:
+  telemetry:
+    logs:
+      level: debug
+  pipelines:
+    traces:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ otlp ]
+    metrics:
+      receivers: [ otlp, postgresql ]
+      processors: [ batch ]
+      exporters: [ prometheus ]
+    logs:
+      receivers: [ otlp, filelog ]
+      processors: [ resource, batch ]
+      exporters: [ loki ]
