@@ -1,0 +1,496 @@
+services:
+  # PostgreSQL Database - Single instance for all scenarios
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: heroes_vs_enemies
+      POSTGRES_USER: prisma_user
+      POSTGRES_PASSWORD: prisma_password
+      # Increase max connections to accommodate all scenarios
+    command: >
+      postgres
+      -c max_connections=300
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.max=10000
+      -c pg_stat_statements.track=all
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./monitoring/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - pool_test_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prisma_user -d heroes_vs_enemies"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgBouncer Instances
+  pgbouncer-transaction:
+    image: pgbouncer/pgbouncer:latest
+    environment:
+      DATABASES_HOST: postgres
+      DATABASES_PORT: 5432
+      DATABASES_USER: prisma_user
+      DATABASES_PASSWORD: prisma_password
+      DATABASES_DBNAME: heroes_vs_enemies
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 10
+      SERVER_RESET_QUERY: DISCARD ALL
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    ports:
+      - "6432:6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./monitoring/pgbouncer/transaction.ini:/etc/pgbouncer/pgbouncer.ini
+    networks:
+      - pool_test_network
+
+  pgbouncer-session:
+    image: pgbouncer/pgbouncer:latest
+    environment:
+      DATABASES_HOST: postgres
+      DATABASES_PORT: 5432
+      DATABASES_USER: prisma_user
+      DATABASES_PASSWORD: prisma_password
+      DATABASES_DBNAME: heroes_vs_enemies
+      POOL_MODE: session
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 15
+      SERVER_RESET_QUERY: DISCARD ALL
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    ports:
+      - "6433:6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./monitoring/pgbouncer/session.ini:/etc/pgbouncer/pgbouncer.ini
+    networks:
+      - pool_test_network
+
+  pgbouncer-statement:
+    image: pgbouncer/pgbouncer:latest
+    environment:
+      DATABASES_HOST: postgres
+      DATABASES_PORT: 5432
+      DATABASES_USER: prisma_user
+      DATABASES_PASSWORD: prisma_password
+      DATABASES_DBNAME: heroes_vs_enemies
+      POOL_MODE: statement
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+      SERVER_RESET_QUERY: DISCARD ALL
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    ports:
+      - "6434:6432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./monitoring/pgbouncer/statement.ini:/etc/pgbouncer/pgbouncer.ini
+    networks:
+      - pool_test_network
+
+  # Application Scenarios - Direct PostgreSQL connections
+  app-scenario-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@postgres:5432/heroes_vs_enemies?connection_limit=10&pool_timeout=5&connect_timeout=10"
+      SCENARIO_NAME: "A-Default"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=A-Default,pool_type=direct,connection_limit=10,pool_timeout=5"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3001-3003:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=A-Default"
+      - "pool_type=direct"
+
+  app-scenario-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@postgres:5432/heroes_vs_enemies?connection_limit=20&pool_timeout=10&connect_timeout=10"
+      SCENARIO_NAME: "B-High-Pool"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=B-High-Pool,pool_type=direct,connection_limit=20,pool_timeout=10"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3004-3006:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=B-High-Pool"
+      - "pool_type=direct"
+
+  app-scenario-c:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@postgres:5432/heroes_vs_enemies?connection_limit=5&pool_timeout=2&connect_timeout=5"
+      SCENARIO_NAME: "C-Low-Pool"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=C-Low-Pool,pool_type=direct,connection_limit=5,pool_timeout=2"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3007-3009:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=C-Low-Pool"
+      - "pool_type=direct"
+
+  app-scenario-d:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@postgres:5432/heroes_vs_enemies?connection_limit=15&pool_timeout=5&connect_timeout=8"
+      SCENARIO_NAME: "D-Dynamic"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=D-Dynamic,pool_type=direct,connection_limit=15,pool_timeout=5"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3010-3012:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=D-Dynamic"
+      - "pool_type=direct"
+
+  app-scenario-e:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@postgres:5432/heroes_vs_enemies?connection_limit=1&pool_timeout=1&connect_timeout=5"
+      SCENARIO_NAME: "E-Single-Connection"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=E-Single-Connection,pool_type=direct,connection_limit=1,pool_timeout=1"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3013-3015:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=E-Single-Connection"
+      - "pool_type=direct"
+
+  # Application Scenarios - PgBouncer connections
+  app-scenario-f:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@pgbouncer-transaction:6432/heroes_vs_enemies?connection_limit=10&pool_timeout=5"
+      SCENARIO_NAME: "F-PgBouncer-Transaction"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=F-PgBouncer-Transaction,pool_type=pgbouncer,connection_limit=10,pool_timeout=5"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3016-3018:3000"
+    depends_on:
+      - pgbouncer-transaction
+      - otel-collector
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=F-PgBouncer-Transaction"
+      - "pool_type=pgbouncer"
+
+  app-scenario-g:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@pgbouncer-session:6432/heroes_vs_enemies?connection_limit=10&pool_timeout=5"
+      SCENARIO_NAME: "G-PgBouncer-Session"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=G-PgBouncer-Session,pool_type=pgbouncer,connection_limit=10,pool_timeout=5"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3019-3021:3000"
+    depends_on:
+      - pgbouncer-session
+      - otel-collector
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=G-PgBouncer-Session"
+      - "pool_type=pgbouncer"
+
+  app-scenario-h:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "postgresql://prisma_user:prisma_password@pgbouncer-statement:6432/heroes_vs_enemies?connection_limit=10&pool_timeout=5"
+      SCENARIO_NAME: "H-PgBouncer-Statement"
+      PORT: 3000
+      NODE_ENV: production
+      # Debug logging
+      DEBUG: "*"
+      # OpenTelemetry configuration
+      OTEL_LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
+      OTEL_EXPORTER_OTLP_INSECURE: "true"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_RESOURCE_ATTRIBUTES: "scenario=H-PgBouncer-Statement,pool_type=pgbouncer,connection_limit=10,pool_timeout=5"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otlp"
+      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+    ports:
+      - "3022-3024:3000"
+    depends_on:
+      - pgbouncer-statement
+      - otel-collector
+    networks:
+      - pool_test_network
+    deploy:
+      replicas: 3
+    labels:
+      - "scenario=H-PgBouncer-Statement"
+      - "pool_type=pgbouncer"
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    privileged: true
+    volumes:
+      - ./monitoring/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus' metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+    networks:
+      - pool_test_network
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  # Grafana LGTM Stack
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_LOG_LEVEL: debug
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    networks:
+      - pool_test_network
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--log.level=debug'
+    networks:
+      - pool_test_network
+
+  # Tempo for traces
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    user: "0:0"  # Run as root to avoid permission issues
+    volumes:
+      - ./monitoring/tempo/tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/tmp/tempo
+    ports:
+      - "3200:3200"   # tempo
+    networks:
+      - pool_test_network
+
+  # Loki for logs
+  loki:
+    image: grafana/loki:latest
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - pool_test_network
+
+
+  # Load Testing
+  k6:
+    image: grafana/k6:latest
+    volumes:
+      - ./load-testing:/scripts
+    networks:
+      - pool_test_network
+    depends_on:
+      - app-scenario-a
+      - app-scenario-f
+    profiles:
+      - testing
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+  tempo_data:
+  loki_data:
+
+networks:
+  pool_test_network:
+    driver: bridge
