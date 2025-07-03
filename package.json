@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "TS_NODE_PROJECT=tsconfig.paths.json node -r tsconfig-paths/register dist/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:unit": "jest test/unit",
@@ -47,6 +47,7 @@
     "@prisma/instrumentation": "^6.11.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "module-alias": "^2.2.3",
     "prisma": "^6.10.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -101,5 +102,21 @@
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
+  },
+  "_moduleAliases": {
+    "@": "dist/src",
+    "@controllers": "dist/src/controllers",
+    "@handlers": "dist/src/handlers",
+    "@commands": "dist/src/commands",
+    "@queries": "dist/src/queries",
+    "@models": "dist/src/models",
+    "@dtos": "dist/src/dtos",
+    "@exceptions": "dist/src/exceptions",
+    "@repositories": "dist/src/repositories",
+    "@services": "dist/src/services",
+    "@prisma": "dist/src/prisma",
+    "@instrumentation": "dist/src/instrumentation",
+    "@config": "dist/src/config",
+    "@common": "dist/src/common"
   }
 }

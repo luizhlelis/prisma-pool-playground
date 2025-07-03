@@ -2,11 +2,8 @@ import {NodeSDK} from '@opentelemetry/sdk-node';
 import {getNodeAutoInstrumentations} from '@opentelemetry/auto-instrumentations-node';
 import {PgInstrumentation} from '@opentelemetry/instrumentation-pg';
 import {PrismaInstrumentation} from '@prisma/instrumentation';
-import {ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, SemanticResourceAttributes} from '@opentelemetry/semantic-conventions';
+import {ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION} from '@opentelemetry/semantic-conventions';
 import {resourceFromAttributes} from '@opentelemetry/resources';
-import {
-  ATTR_DEPLOYMENT_ENVIRONMENT_NAME
-} from "@opentelemetry/semantic-conventions/build/esnext/experimental_attributes";
 
 // Enhanced database instrumentation configuration
 export function setupDatabaseInstrumentation() {
@@ -14,7 +11,7 @@ export function setupDatabaseInstrumentation() {
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'heroes-vs-enemies',
       [ATTR_SERVICE_VERSION]: '1.0.0',
-      [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: process.env.NODE_ENV || 'development',
+      ['deployment.environment.name']: process.env.NODE_ENV || 'development',
     }),
     instrumentations: [
       // Auto-instrumentations for common libraries

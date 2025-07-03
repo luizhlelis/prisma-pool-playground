@@ -32,6 +32,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/tsconfig.paths.json ./
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -51,5 +52,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
+# Set environment variable for tsconfig-paths
+ENV TS_NODE_PROJECT=tsconfig.paths.json
+
 # Start the application
-CMD ["node", "dist/src/main.js"]
+CMD ["node", "-r", "tsconfig-paths/register", "dist/src/main"]
