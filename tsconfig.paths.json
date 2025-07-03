@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./dist",
+    "paths": {
+      "@/*": ["src/*"],
+      "@controllers/*": ["src/controllers/*"],
+      "@handlers/*": ["src/handlers/*"],
+      "@commands/*": ["src/commands/*"],
+      "@queries/*": ["src/queries/*"],
+      "@models/*": ["src/models/*"],
+      "@dtos/*": ["src/dtos/*"],
+      "@exceptions/*": ["src/exceptions/*"],
+      "@repositories/*": ["src/repositories/*"],
+      "@services/*": ["src/services/*"],
+      "@prisma/*": ["src/prisma/*"],
+      "@instrumentation/*": ["src/instrumentation/*"],
+      "@config/*": ["src/config/*"],
+      "@common/*": ["src/common/*"]
+    }
+  }
+}

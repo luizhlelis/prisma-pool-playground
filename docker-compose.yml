@@ -106,19 +106,17 @@ services:
       SCENARIO_NAME: "A-Default"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-a"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=A-Default,pool_type=direct,connection_limit=10,pool_timeout=5"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3001-3003:3000"
     depends_on:
@@ -143,19 +141,17 @@ services:
       SCENARIO_NAME: "B-High-Pool"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-b"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=B-High-Pool,pool_type=direct,connection_limit=20,pool_timeout=10"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3004-3006:3000"
     depends_on:
@@ -180,19 +176,17 @@ services:
       SCENARIO_NAME: "C-Low-Pool"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-c"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=C-Low-Pool,pool_type=direct,connection_limit=5,pool_timeout=2"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3007-3009:3000"
     depends_on:
@@ -217,19 +211,17 @@ services:
       SCENARIO_NAME: "D-Dynamic"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-d"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=D-Dynamic,pool_type=direct,connection_limit=15,pool_timeout=5"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3010-3012:3000"
     depends_on:
@@ -254,19 +246,17 @@ services:
       SCENARIO_NAME: "E-Single-Connection"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-e"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=E-Single-Connection,pool_type=direct,connection_limit=1,pool_timeout=1"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3013-3015:3000"
     depends_on:
@@ -292,19 +282,17 @@ services:
       SCENARIO_NAME: "F-PgBouncer-Transaction"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-f"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=F-PgBouncer-Transaction,pool_type=pgbouncer,connection_limit=10,pool_timeout=5"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3016-3018:3000"
     depends_on:
@@ -327,19 +315,17 @@ services:
       SCENARIO_NAME: "G-PgBouncer-Session"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-g"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=G-PgBouncer-Session,pool_type=pgbouncer,connection_limit=10,pool_timeout=5"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3019-3021:3000"
     depends_on:
@@ -362,19 +348,17 @@ services:
       SCENARIO_NAME: "H-PgBouncer-Statement"
       PORT: 3000
       NODE_ENV: production
-      # Debug logging
-      DEBUG: "*"
       # OpenTelemetry configuration
-      OTEL_LOG_LEVEL: debug
+      OTEL_LOG_LEVEL: info
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: "otel-collector:4317"
       OTEL_EXPORTER_OTLP_INSECURE: "true"
-      OTEL_SERVICE_NAME: "heroes-vs-enemies"
+      OTEL_SERVICE_NAME: "heroes-vs-enemies-scenario-h"
       OTEL_RESOURCE_ATTRIBUTES: "scenario=H-PgBouncer-Statement,pool_type=pgbouncer,connection_limit=10,pool_timeout=5"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "otlp"
       OTEL_LOGS_EXPORTER: "otlp"
-      NODE_OPTIONS: "--require ./dist/instrumentation/index.js"
+      NODE_OPTIONS: "--require ./dist/src/instrumentation/index.js"
     ports:
       - "3022-3024:3000"
     depends_on:
@@ -418,7 +402,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_LOG_LEVEL: debug
+      GF_LOG_LEVEL: info
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
@@ -441,7 +425,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
-      - '--log.level=debug'
+      - '--log.level=info'
     networks:
       - pool_test_network
 

@@ -48,9 +48,6 @@ processors:
   batch:
   resource:
     attributes:
-      - key: service.name
-        value: heroes-vs-enemies
-        action: insert
       - key: loki.resource.labels
         value: service.name, container.id
         action: insert
@@ -68,7 +65,7 @@ exporters:
 service:
   telemetry:
     logs:
-      level: debug
+      level: info
   pipelines:
     traces:
       receivers: [ otlp ]
